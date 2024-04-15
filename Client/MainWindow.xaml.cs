@@ -59,7 +59,7 @@ namespace Client
             try
             {
                 _tcpClient = new TcpClient();
-                await _tcpClient.ConnectAsync("127.0.0.1", 8080);
+                await _tcpClient.ConnectAsync(Text.Text, 49153);
 
                 //_networkStream = _tcpClient.GetStream();
                 waveOut = new WaveOutEvent();

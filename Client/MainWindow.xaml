@@ -7,7 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="648,384,0,0" VerticalAlignment="Top" Click="ConnectButton_Click"/>
+        <Button Content="Подключение" HorizontalAlignment="Left" Margin="648,384,0,0" VerticalAlignment="Top" Click="ConnectButton_Click"/>
+        <TextBox x:Name="Text" HorizontalAlignment="Left" Margin="204,10,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="120"/>
+        <Label Content="Напишите строку подключения:" HorizontalAlignment="Left" Margin="0,6,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

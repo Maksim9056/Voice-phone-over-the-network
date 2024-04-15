@@ -1,4 +1,4 @@
-﻿using System;
+﻿ using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -102,7 +102,7 @@ class Program
     static async Task Main(string[] args)
     {
         string ipAddress = "0.0.0.0";
-        int port = 8080;
+        int port = 49153;
 
         using (var server = new TcpSocketServer(ipAddress, port))
         {

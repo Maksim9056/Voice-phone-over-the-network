@@ -10,7 +10,7 @@ public class TcpSocketServer : IDisposable
 {
     private TcpListener _listener;
     private ConcurrentDictionary<Guid, TcpClient> _clients;
-    
+
     public TcpSocketServer(string ipAddress, int port)
     {
         _listener = new TcpListener(IPAddress.Parse(ipAddress), port);
@@ -55,7 +55,6 @@ public class TcpSocketServer : IDisposable
                 byte[] messageBytes = new byte[bytesRead];
                 Array.Copy(buffer, messageBytes, bytesRead);
 
-                // Broadcast received message to all clients
                 await BroadcastMessage(clientId, messageBytes);
             }
         }
@@ -65,10 +64,7 @@ public class TcpSocketServer : IDisposable
         }
         finally
         {
-            // Client disconnected
-            client.Close();
-            _clients.TryRemove(clientId, out _);
-            Console.WriteLine($"Client {clientId} disconnected");
+            await RemoveClient(clientId);
         }
     }
 
@@ -79,9 +75,19 @@ public class TcpSocketServer : IDisposable
             TcpClient receiver = clientPair.Value;
             if (receiver.Connected)
             {
-                NetworkStream receiverStream = receiver.GetStream();
-                await receiverStream.WriteAsync(message, 0, message.Length);
+                await receiver.GetStream().WriteAsync(message, 0, message.Length);
+                //NetworkStream receiverStream = receiver.GetStream();
+                //await receiverStream.WriteAsync(message, 0, message.Length);
             }
+        }
+    }
+
+    private async Task RemoveClient(Guid clientId)
+    {
+        if (_clients.TryRemove(clientId, out TcpClient removedClient))
+        {
+            removedClient.Close();
+            Console.WriteLine($"Client {clientId} disconnected");
         }
     }
 
@@ -96,6 +102,7 @@ public class TcpSocketServer : IDisposable
         _clients.Clear();
     }
 }
+
 
 class Program
 {

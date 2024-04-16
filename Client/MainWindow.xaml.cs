@@ -13,36 +13,27 @@ using System.Windows.Shapes;
 using NAudio.Wave;
 using System.Net.Sockets;
 using System.Net.Http;
+using System.IO;
 
 namespace Client
 {
     public partial class MainWindow : Window
     {
         private TcpClient _tcpClient;
-        private NetworkStream _networkStream;
         private WaveInEvent _waveIn;
         private WaveOutEvent _waveOut;
         private BufferedWaveProvider _bufferedWaveProvider;
-        static bool microphoneEnabled = true; // Изначально микрофон включен
-        WaveOutEvent waveOut = null;
-        WaveStream waveStream = null;
+
         public MainWindow()
         {
-            try
-            {
+            InitializeComponent();
 
+            _waveIn = new WaveInEvent();
+            _waveIn.WaveFormat = new WaveFormat(44100, 1); // 44.1kHz, моно
 
-                InitializeComponent();
-                _waveIn = new WaveInEvent();
-                _waveIn.WaveFormat = new WaveFormat(44100, 1); // 44.1kHz, моно
-                _waveOut = new WaveOutEvent();
-                _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 1)); // Установите нужные параметры формата здесь
-                _waveOut.Init(_bufferedWaveProvider);
-            }
-            catch (Exception)
-            {
-
-            }
+            _waveOut = new WaveOutEvent();
+            _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 1));
+            _waveOut.Init(_bufferedWaveProvider);
         }
 
         private async void ConnectButton_Click(object sender, RoutedEventArgs e)
@@ -50,17 +41,16 @@ namespace Client
             try
             {
                 _tcpClient = new TcpClient();
-                await _tcpClient.ConnectAsync(Text.Text, 49153);
 
-                //_networkStream = _tcpClient.GetStream();
+                await _tcpClient.ConnectAsync(Text.Text, 49153); // Измените на IP и порт сервера
 
-                _waveOut.Play();
                 _waveIn.DataAvailable += WaveIn_DataAvailable;
-                
 
-                // Start recording from microphone
                 _waveIn.StartRecording();
-            
+                _waveOut.Play();
+
+
+
             }
             catch (Exception ex)
             {
@@ -68,44 +58,83 @@ namespace Client
             }
         }
 
+        private async Task SendAudioDataAsync(byte[] data, int length)
+        {
+            try
+            {
+                //Оставляем так как таски
+                _bufferedWaveProvider.AddSamples(data, 0, length);
 
-        //private async void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
-        //{
-        //    try
-        //    {
-        //        byte[] audioBuffer = microphoneEnabled ? e.Buffer : new byte[e.BytesRecorded]; // Если микрофон выключен, отправляем тишину
+                if (_tcpClient != null && _tcpClient.Connected)
+                {
+                    await _tcpClient.GetStream().WriteAsync(data, 0, length);
+                }
+                else
+                {
+                    Console.WriteLine("TCP client is not connected.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending audio data: {ex.Message}");
+                // Обработка ошибок, если необходимо.
+            }
+        }
 
-        //        if (_networkStream != null && _tcpClient.Connected)
-        //        {
-        //            // Отправляем аудио данные на сервер
-        //            await _networkStream.WriteAsync(e.Buffer, 0, e.BytesRecorded);
-        //        }
-
-        //        // Добавляем записанные данные в буфер для воспроизведения
-        //        _bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show($"Ошибка при отправке аудио данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-        //    }
-        //}
         private async void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
             try
             {
-                if (_tcpClient != null && _tcpClient.Connected)
-                {
-                    byte[] audioBuffer = microphoneEnabled ? e.Buffer : new byte[e.BytesRecorded];
-                    await _tcpClient.GetStream().WriteAsync(audioBuffer, 0, e.BytesRecorded);
-                }
 
-                _bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                await SendAudioDataAsync(e.Buffer, e.BytesRecorded);
+
+
+                //if (_tcpClient != null && _tcpClient.Connected)
+                //{
+                //    await _tcpClient.GetStream().WriteAsync(e.Buffer, 0, e.BytesRecorded);
+
+                //    _bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                //    //using (MemoryStream ms = new MemoryStream())
+                //    //{
+                //    //    int bytesToSend = e.BytesRecorded;
+                //    //    int offset = 0;
+
+                //    //    // Создаем копию буфера для отправки
+                //    //    byte[] bufferToSend = new byte[bytesToSend];
+                //    //    Array.Copy(e.Buffer, bufferToSend, bytesToSend);
+
+                //    //    //while (bytesToSend > 0)
+                //    //    //{
+                //    //    //    using (MemoryStream msы = new MemoryStream())
+                //    //    //    {
+                //    //    //        int blockSize = Math.Min(bytesToSend, 1024); // Отправляем блоками по 1024 байта
+                //    //    //        await _tcpClient.GetStream().WriteAsync(bufferToSend, offset, blockSize);
+
+                //    //    //        offset += blockSize;
+                //    //    //        bytesToSend -= blockSize;
+                //    //    //    }
+
+                //    //}
+                //    //_bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                //    //}
+
+
+                //}
+
+                //else
+                //{
+                //    // Логирование ошибки отсутствия соединения
+                //    Console.WriteLine("TCP client is not connected.");
+                //}
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при отправке аудио данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                //MessageBox.Show($"Ошибка при отправке аудио данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
+
         private void DisconnectButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -113,33 +142,43 @@ namespace Client
                 _waveIn.StopRecording();
                 _waveOut.Stop();
 
-                _networkStream?.Close();
                 _tcpClient?.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при отправке аудио данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Ошибка при отключении от сервера: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-   
 
         protected override void OnClosed(EventArgs e)
         {
-            try
-            {
-                base.OnClosed(e);
-                DisconnectButton_Click(null, null); // Закрываем соединение при закрытии окна
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при отправке аудио данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            base.OnClosed(e);
+            DisconnectButton_Click(null, null);
         }
     }
+
 }
 
+//private async void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
+//{
+//    try
+//    {
+//        byte[] audioBuffer = microphoneEnabled ? e.Buffer : new byte[e.BytesRecorded]; // Если микрофон выключен, отправляем тишину
 
+//        if (_networkStream != null && _tcpClient.Connected)
+//        {
+//            // Отправляем аудио данные на сервер
+//            await _networkStream.WriteAsync(e.Buffer, 0, e.BytesRecorded);
+//        }
+
+//        // Добавляем записанные данные в буфер для воспроизведения
+//        _bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+//    }
+//    catch (Exception ex)
+//    {
+//        MessageBox.Show($"Ошибка при отправке аудио данных: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+//    }
+//}
 //_waveIn.DataAvailable += async (sender, e) =>
 //{
 //    byte[] audioBuffer = microphoneEnabled ? e.Buffer : new byte[e.BytesRecorded]; // Если микрофон выключен, отправляем тишину

@@ -89,43 +89,6 @@ namespace Client
                 await SendAudioDataAsync(e.Buffer, e.BytesRecorded);
 
 
-                //if (_tcpClient != null && _tcpClient.Connected)
-                //{
-                //    await _tcpClient.GetStream().WriteAsync(e.Buffer, 0, e.BytesRecorded);
-
-                //    _bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
-                //    //using (MemoryStream ms = new MemoryStream())
-                //    //{
-                //    //    int bytesToSend = e.BytesRecorded;
-                //    //    int offset = 0;
-
-                //    //    // Создаем копию буфера для отправки
-                //    //    byte[] bufferToSend = new byte[bytesToSend];
-                //    //    Array.Copy(e.Buffer, bufferToSend, bytesToSend);
-
-                //    //    //while (bytesToSend > 0)
-                //    //    //{
-                //    //    //    using (MemoryStream msы = new MemoryStream())
-                //    //    //    {
-                //    //    //        int blockSize = Math.Min(bytesToSend, 1024); // Отправляем блоками по 1024 байта
-                //    //    //        await _tcpClient.GetStream().WriteAsync(bufferToSend, offset, blockSize);
-
-                //    //    //        offset += blockSize;
-                //    //    //        bytesToSend -= blockSize;
-                //    //    //    }
-
-                //    //}
-                //    //_bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
-                //    //}
-
-
-                //}
-
-                //else
-                //{
-                //    // Логирование ошибки отсутствия соединения
-                //    Console.WriteLine("TCP client is not connected.");
-                //}
             }
             catch (Exception ex)
             {
@@ -159,6 +122,44 @@ namespace Client
 
 }
 
+//if (_tcpClient != null && _tcpClient.Connected)
+//{
+//    await _tcpClient.GetStream().WriteAsync(e.Buffer, 0, e.BytesRecorded);
+
+//    _bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+//    //using (MemoryStream ms = new MemoryStream())
+//    //{
+//    //    int bytesToSend = e.BytesRecorded;
+//    //    int offset = 0;
+
+//    //    // Создаем копию буфера для отправки
+//    //    byte[] bufferToSend = new byte[bytesToSend];
+//    //    Array.Copy(e.Buffer, bufferToSend, bytesToSend);
+
+//    //    //while (bytesToSend > 0)
+//    //    //{
+//    //    //    using (MemoryStream msы = new MemoryStream())
+//    //    //    {
+//    //    //        int blockSize = Math.Min(bytesToSend, 1024); // Отправляем блоками по 1024 байта
+//    //    //        await _tcpClient.GetStream().WriteAsync(bufferToSend, offset, blockSize);
+
+//    //    //        offset += blockSize;
+//    //    //        bytesToSend -= blockSize;
+//    //    //    }
+
+//    //}
+//    //_bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+//    //}
+
+
+//}
+
+//else
+//{
+//    // Логирование ошибки отсутствия соединения
+//    Console.WriteLine("TCP client is not connected.");
+//}
+//s
 //private async void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
 //{
 //    try

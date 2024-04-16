@@ -35,6 +35,30 @@ namespace Client
             _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 1));
             _waveOut.Init(_bufferedWaveProvider);
         }
+        private async void ReceiveAudioData()
+        {
+            try
+            {
+                byte[] buffer = new byte[1024];
+                while (_tcpClient.Connected)
+                {
+                    int bytesRead = await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    if (bytesRead > 0)
+                    {
+                        _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+                        if (!_waveOut.PlaybackState.Equals(PlaybackState.Playing))
+                        {
+                            _waveOut.Play();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error receiving audio data: {ex.Message}");
+                // Дополнительная обработка ошибок при приеме данных.
+            }
+        }
 
         private async void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
@@ -44,10 +68,9 @@ namespace Client
 
                 await _tcpClient.ConnectAsync(Text.Text, 49153); // Измените на IP и порт сервера
 
-                _waveIn.DataAvailable += WaveIn_DataAvailable;
+                Task.Run(() => _waveIn.DataAvailable += WaveIn_DataAvailable);
 
-                _waveIn.StartRecording();
-                _waveOut.Play();
+                Task.Run(() => ReceiveAudioData());
 
 
 
@@ -63,11 +86,13 @@ namespace Client
             try
             {
                 //Оставляем так как таски
-                _bufferedWaveProvider.AddSamples(data, 0, length);
+                //_bufferedWaveProvider.AddSamples(data, 0, length);
 
                 if (_tcpClient != null && _tcpClient.Connected)
                 {
                     await _tcpClient.GetStream().WriteAsync(data, 0, length);
+                    //_bufferedWaveProvider.AddSamples(data, 0, length);
+
                 }
                 else
                 {
@@ -118,8 +143,57 @@ namespace Client
             base.OnClosed(e);
             DisconnectButton_Click(null, null);
         }
-    }
 
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _waveIn.StopRecording();
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _waveIn.StartRecording();
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _waveOut.Play();
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _waveOut.Stop();
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+    }
 }
 
 //if (_tcpClient != null && _tcpClient.Connected)

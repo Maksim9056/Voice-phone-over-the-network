@@ -75,12 +75,18 @@ public class TcpSocketServer : IDisposable
             TcpClient receiver = clientPair.Value;
             if (receiver.Connected)
             {
-                await receiver.GetStream().WriteAsync(message, 0, message.Length);
-                //NetworkStream receiverStream = receiver.GetStream();
-                //await receiverStream.WriteAsync(message, 0, message.Length);
+                try
+                {
+                    await receiver.GetStream().WriteAsync(message, 0, message.Length);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending message to client {clientPair.Key}: {ex.Message}");
+                }
             }
         }
     }
+
 
     private async Task RemoveClient(Guid clientId)
     {

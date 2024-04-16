@@ -21,7 +21,7 @@ public class TcpSocketServer : IDisposable
     {
         _listener.Start();
         Console.WriteLine("TCP socket server listening...");
-
+            
         try
         {
             while (true)

@@ -35,7 +35,7 @@ namespace Client
             _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 1));
             _waveOut.Init(_bufferedWaveProvider);
         }
-        private async void ReceiveAudioData()
+        private async Task ReceiveAudioData()
         {
             try
             {
@@ -59,7 +59,20 @@ namespace Client
                 // Дополнительная обработка ошибок при приеме данных.
             }
         }
+        private async Task AudioData()
+        {
+            try
+            {
+                while (true)
+                {
+                    _ = Task.Run(() => ReceiveAudioData());
 
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+        }
         private async void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -70,7 +83,7 @@ namespace Client
 
                 Task.Run(() => _waveIn.DataAvailable += WaveIn_DataAvailable);
 
-                Task.Run(() => ReceiveAudioData());
+                Task.Run(() => AudioData());
 
 
 
@@ -110,9 +123,12 @@ namespace Client
         {
             try
             {
+                while (true)
+                {
+                    _ = Task.Run(() => SendAudioDataAsync(e.Buffer, e.BytesRecorded));
 
-                await SendAudioDataAsync(e.Buffer, e.BytesRecorded);
 
+                }
 
             }
             catch (Exception ex)

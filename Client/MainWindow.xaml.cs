@@ -14,6 +14,7 @@ using NAudio.Wave;
 using System.Net.Sockets;
 using System.Net.Http;
 using System.IO;
+using System;
 
 namespace Client
 {
@@ -24,6 +25,7 @@ namespace Client
         private WaveOutEvent _waveOut;
         private BufferedWaveProvider _bufferedWaveProvider;
 
+        bool Conect = false;
         public MainWindow()
         {
             InitializeComponent();
@@ -35,20 +37,45 @@ namespace Client
             _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 1));
             _waveOut.Init(_bufferedWaveProvider);
         }
+
         private async Task ReceiveAudioData()
         {
             try
             {
-                byte[] buffer = new byte[1024];
-                while (_tcpClient.Connected)
+                while (Conect)
                 {
-                    int bytesRead = await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                    if (bytesRead > 0)
+                    //if (!_tcpClient.Connected)
+                    //{
+                    //    // Если соединение разорвано, переподключаемся.
+                    //    await Reconnect();
+                    //}
+                    while (_tcpClient.Connected)
                     {
-                        _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
-                        if (!_waveOut.PlaybackState.Equals(PlaybackState.Playing))
+                        // Читаем длину сообщения
+                        //byte[] lengthBuffer = new byte[sizeof(int)];
+                        //int lengthBytesRead = await _tcpClient.GetStream().ReadAsync(lengthBuffer, 0, lengthBuffer.Length);
+
+                        ////if (lengthBytesRead != sizeof(int))
+                        ////{
+                        ////    // Обработка ситуации, когда не удалось прочитать длину сообщения
+                        ////    continue;
+                        ////}
+
+                        //int messageLength = BitConverter.ToInt32(lengthBuffer, 0);
+                        byte[] buffer = new byte[_tcpClient.SendBufferSize];
+
+                        int bytesRead = await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                        if (bytesRead > 0)
                         {
-                            _waveOut.Play();
+                            _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+                            if (_waveOut.PlaybackState != PlaybackState.Playing)
+                            {
+                                _waveOut.Play();
+                            }
+                        }
+                        else
+                        {
+                            // Если не было прочитано данных, возможно, соединение разорвано.
                         }
                     }
                 }
@@ -59,15 +86,46 @@ namespace Client
                 // Дополнительная обработка ошибок при приеме данных.
             }
         }
+
+        //private async Task ReceiveAudioData()
+        //{
+        //    try
+        //    {
+        //        while (Conect)
+        //        {
+        //            while (_tcpClient.Connected)
+        //            {
+
+
+        //                byte[] buffer = new byte[8080];
+
+        //                int bytesRead = await _tcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+        //                if (bytesRead > 0)
+        //                {
+        //                    _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+        //                    if (!_waveOut.PlaybackState.Equals(PlaybackState.Playing))
+        //                    {
+        //                        _waveOut.Play();
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error receiving audio data: {ex.Message}");
+        //        // Дополнительная обработка ошибок при приеме данных.
+        //    }
+        //}
         private async Task AudioData()
         {
             try
             {
-                while (true)
-                {
-                    _ = Task.Run(() => ReceiveAudioData());
+             
+                    await ReceiveAudioData();
+                    //_ = Task.Run(() => ReceiveAudioData());
 
-                }
+                
             }
             catch (Exception ex)
             {
@@ -78,14 +136,15 @@ namespace Client
             try
             {
                 _tcpClient = new TcpClient();
+                //await _tcpClient.ConnectAsync("127.0.0.1", 5090); // Измените на IP и порт сервера
 
-                await _tcpClient.ConnectAsync(Text.Text, 49153); // Измените на IP и порт сервера
-
-                Task.Run(() => _waveIn.DataAvailable += WaveIn_DataAvailable);
+                await _tcpClient.ConnectAsync(Text.Text, 5090); // Измените на IP и порт сервера
+                Conect = true;
 
                 Task.Run(() => AudioData());
 
-
+                //Task.Run(() => );
+                _waveIn.DataAvailable += WaveIn_DataAvailable;
 
             }
             catch (Exception ex)
@@ -94,23 +153,23 @@ namespace Client
             }
         }
 
-        private async Task SendAudioDataAsync(byte[] data, int length)
+        private void SendAudioDataAsync(byte[] data, int length)
         {
             try
             {
                 //Оставляем так как таски
                 //_bufferedWaveProvider.AddSamples(data, 0, length);
+                     _tcpClient.GetStream().Write(data, 0, length);
 
-                if (_tcpClient != null && _tcpClient.Connected)
-                {
-                    await _tcpClient.GetStream().WriteAsync(data, 0, length);
-                    //_bufferedWaveProvider.AddSamples(data, 0, length);
+                //if (_tcpClient != null && _tcpClient.Connected)
+                //{
+                //    //_bufferedWaveProvider.AddSamples(data, 0, length);
 
-                }
-                else
-                {
-                    Console.WriteLine("TCP client is not connected.");
-                }
+                //}
+                //else
+                //{
+                //    Console.WriteLine("TCP client is not connected.");
+                //}
             }
             catch (Exception ex)
             {
@@ -119,16 +178,21 @@ namespace Client
             }
         }
 
-        private async void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
+        private void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
             try
             {
-                while (true)
-                {
-                    _ = Task.Run(() => SendAudioDataAsync(e.Buffer, e.BytesRecorded));
+             
+                //while (Conect)
+                //{
+                     SendAudioDataAsync(e.Buffer, e.BytesRecorded);
+
+                //}
+
+                //_ = Task.Run(() => SendAudioDataAsync(e.Buffer, e.BytesRecorded));
 
 
-                }
+
 
             }
             catch (Exception ex)
@@ -189,7 +253,6 @@ namespace Client
         {
             try
             {
-                _waveOut.Play();
 
             }
             catch (Exception ex)

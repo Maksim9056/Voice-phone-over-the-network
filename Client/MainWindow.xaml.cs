@@ -138,7 +138,7 @@ namespace Client
                 _tcpClient = new TcpClient();
                 //await _tcpClient.ConnectAsync("127.0.0.1", 5090); // Измените на IP и порт сервера
 
-                await _tcpClient.ConnectAsync(Text.Text, 5090); // Измените на IP и порт сервера
+                await _tcpClient.ConnectAsync(Text.Text, 49153); // Измените на IP и порт сервера
                 Conect = true;
 
                 Task.Run(() => AudioData());
